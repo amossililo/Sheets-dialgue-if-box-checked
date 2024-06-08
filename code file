@@ -1,0 +1,51 @@
+function onEdit(e) {
+  if (e && e.source) {
+    var sheet = e.source.getActiveSheet();
+    var range = e.range;
+    var ui = SpreadsheetApp.getUi();
+
+    Logger.log('Edit detected in range: ' + range.getA1Notation());
+
+    // Define the checkbox range (adjust as necessary)
+    var checkboxRange = sheet.getRange("B3:AH66"); // Change to your range
+    Logger.log('Checkbox range set to: ' + checkboxRange.getA1Notation());
+
+    // Check if the edited cell is within the range containing checkboxes
+    if (isRangeInCheckboxRange(range, checkboxRange)) {
+      var cell = sheet.getRange(range.getA1Notation());
+      Logger.log('Cell in checkbox range: ' + cell.getA1Notation());
+
+      try {
+        var isChecked = cell.isChecked();
+        Logger.log('Cell isChecked status: ' + isChecked);
+
+        var action = isChecked ? 'check' : 'uncheck';
+        var response = ui.alert('Confirmation', 'Do you want to ' + action + ' this box?', ui.ButtonSet.YES_NO);
+        Logger.log('Alert response: ' + response);
+
+        if ((isChecked && response == ui.Button.NO) || (!isChecked && response == ui.Button.NO)) {
+          // Undo the checkbox if the user selects "No"
+          cell.setValue(!isChecked);
+        }
+      } catch (err) {
+        Logger.log('Error checking checkbox status: ' + err.message);
+      }
+    } else {
+      Logger.log('Edited cell is not within the checkbox range.');
+    }
+  } else {
+    Logger.log('The event object "e" or "e.source" is undefined.');
+  }
+}
+
+function isRangeInCheckboxRange(editedRange, checkboxRange) {
+  var editedRow = editedRange.getRow();
+  var editedColumn = editedRange.getColumn();
+  var checkboxRangeStartRow = checkboxRange.getRow();
+  var checkboxRangeEndRow = checkboxRangeStartRow + checkboxRange.getNumRows() - 1;
+  var checkboxRangeStartColumn = checkboxRange.getColumn();
+  var checkboxRangeEndColumn = checkboxRangeStartColumn + checkboxRange.getNumColumns() - 1;
+
+  return (editedRow >= checkboxRangeStartRow && editedRow <= checkboxRangeEndRow &&
+          editedColumn >= checkboxRangeStartColumn && editedColumn <= checkboxRangeEndColumn);
+}
